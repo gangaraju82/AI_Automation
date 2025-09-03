@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
+    "@playwright/mcp": "^0.0.36",
     "@playwright/test": "^1.55.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
