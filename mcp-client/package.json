@@ -1,0 +1,27 @@
+{
+  "name": "mcp-client",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/client.js",
+  "scripts": {
+    "start": "tsx src/client.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "2.0.11",
+    "@ai-sdk/openai": "2.0.23",
+    "@modelcontextprotocol/sdk": "1.17.5",
+    "ai": "5.0.28",
+    "fs-extra": "^11.2.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^4.21.2",
+    "fs": "^0.0.1-security",
+    "tsx": "^4.20.5"
+  }
+}
