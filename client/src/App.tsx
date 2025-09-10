@@ -27,7 +27,7 @@ export default function App() {
   }
 
   async function onGenerate() {
-    const j = await call("/api/generate", { prompt, filename, baseURL });
+    const j = await call("/api/self-heal", { prompt});//, filename, baseURL });
     setLog((prev) => prev + "\nGenerated: " + JSON.stringify(j, null, 2));
   }
 
