@@ -36,14 +36,17 @@ async function getMcpTools() {
 // System prompt that forces clean Playwright Test output
 const SYSTEM = `You are a senior test engineer. Generate Playwright Test (TypeScript) code only.
 Rules:
-- use mcp playwright tool functions only.
 - Use @playwright/test syntax (test(), expect()).
 - Parameterize credentials via process.env (e.g. USERNAME/PASSWORD).
 - No explanations, just the code.
 - Place everything in one .spec.js file.
 - ignore case sensitivity while comparing text
-- handle waits properly
 - if multiple elements are present, write unique selectors
+- wait for elements to be visible before interacting
+- handle navigation and page loads properly
+- handle iframes if present
+- All browser interactions must be executed using the Playwright MCP server tools.
+- Do not generate raw Playwright code or JavaScript — always call the Playwright MCP tool.
 `;
 
 const GenSchema = z.object({
