@@ -1,25 +1,23 @@
 
 import { test, expect } from '@playwright/test';
 
-test('SauceDemo - Login and Add Product to Cart', async ({ page }) => {
-    // Launch the website
+test('Login and add product to cart', async ({ page }) => {
+    // Navigate to the website
     await page.goto('https://saucedemo.com');
 
-    // Login with credentials from environment variables
-    await page.fill('[data-test="username"]', process.env.USERNAME);
-    await page.fill('[data-test="password"]', process.env.PASSWORD);
+    // Perform login
+    await page.fill('[data-test="username"]',  'standard_user');
+    await page.fill('[data-test="password"]',  'secret_sauce');
     await page.click('[data-test="login-button"]');
     
-    // Wait for the inventory page to load
-    await expect(page.locator('.inventory_list')).toBeVisible();
+    // Ensure we're on the products page
+    await expect(page).toHaveURL(/.*\/inventory\.html/);
 
-    // Add the first product to the cart
-    await page.click('.inventory_item:first-of-type .btn_inventory');
-
-    // Wait for the cart icon to update
-    const cartCount = page.locator('.shopping_cart_badge');
-    await expect(cartCount).toBeVisible();
+    // Add a product to the cart
+    await page.click('text="Sauce Labs Backpack"'); // Unique selector for a specific product
+    await page.click('"Add to cart"');
 
     // Verify that 1 product is added to the cart
-    await expect(cartCount).toHaveText('1', { ignoreCase: true });
+    const cartCount = await page.locator('.shopping_cart_badge').textContent();
+    expect(parseInt(cartCount || '0')).toBe(1);
 });
