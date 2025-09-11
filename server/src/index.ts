@@ -32,6 +32,7 @@ Rules:
 - handle iframes if present
 - All browser interactions must be executed using the Playwright MCP server tools.
 - Do not generate raw Playwright code or JavaScript — always call the Playwright MCP tool.
+- do not use credentials from the environment variables directly, use hardcoded test credentials provided in the prompt
 `;
 
 
@@ -187,7 +188,7 @@ Do NOT include markdown, code fences, or explanations.
     throw new Error("Model did not return JSON matching TestSpec.");
   }
 
-  console.log("✅ LLM generated test:", object.filename);
+  // console.log("✅ LLM generated test:", object.filename);
   return object;
 }
 
@@ -273,7 +274,7 @@ async function selfHeal({
   try {
     // 1) Generate initial test
     const initial = await llmGenerateTest(prompt);
-    console.log("Initial test generated:", initial.filename);
+    // console.log("Initial test generated:", initial.filename);
     let currentFilename = initial.filename;
     let currentCode = initial.code;
       // .replace('process.env.USERNAME','')
@@ -313,7 +314,7 @@ async function selfHeal({
         };
       }
 
-      console.log("Exit code:", parsed.exitCode);
+      // console.log("Exit code:", parsed.exitCode);
 
       if (parsed.exitCode === 0) {
         console.log("✅ Test passed!");
@@ -328,7 +329,7 @@ async function selfHeal({
 
       // 3) Summarize failure and repair
       const failure = summarizeFailure(parsed);
-      console.log("Failure summary:\n", failure);
+      // console.log("Failure summary:\n", failure);
 
       let fixedCode = await llmRepairTest(currentCode, failure);
       // fixedCode = fixedCode
