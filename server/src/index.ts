@@ -19,31 +19,65 @@ app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 
 // ----------------- UNIFIED SYSTEM PROMPT -----------------
-const BASE_SYSTEM_RULES = `You are a senior test engineer. Generate Playwright Test (TypeScript) code only.
+const BASE_SYSTEM_RULES = `You are an assistant that generates Playwright automation test scripts in TypeScript.
+Always follow these rules when writing scripts:
 Rules:
-- Use @playwright/test syntax (test(), expect()).
-- Parameterize credentials via process.env (e.g. USERNAME/PASSWORD).
-- No explanations, just the code.
-- Place everything in one .spec.js file.
 - ignore case sensitivity while comparing text
-- if multiple elements are present, write unique selectors
-- wait for elements to be visible before interacting
-- handle navigation and page loads properly
-- handle iframes if present
 - All browser interactions must be executed using the Playwright MCP server tools.
 - Do not generate raw Playwright code or JavaScript — always call the Playwright MCP tool.
-- do not use credentials from the environment variables directly, use hardcoded test credentials provided in the prompt
+1. Locator Handling:
+   - If multiple elements match a locator for 'add to cart', do not fail immediately.
+   - Iterate through the matched elements.
+   - For each element, check:
+       a. If it is visible ('await locator.isVisible()').
+       b. If the action is a click:
+           - Prefer elements that are 'role="button"', '<input>','<button>', '<a>', or clickable.
+       c. If the action is input (like 'fill' 'or 'type'):
+           - Prefer '<input>', '<textarea>', or editable fields.
+
+2. Error Resilience:
+   - Always wait for visibility before interacting.
+   - Use 'await expect(locator).toBeVisible()' before actions.
+   - If no suitable element is found, log a warning instead of throwing.
+
+3. Code Style:
+   - Always use async/await.
+   - Use 'page.getByRole', 'page.getByText', or 'page.locator' with filters.
+   - Keep the code clean and modular.
+   - Generate only TypeScript Playwright code, no extra explanation.
+
+Your output must be directly executable as a Playwright test.
 `;
 
 
-const REPAIR_INSTRUCTIONS = `
-You are repairing a failing Playwright test. Apply the same rules above plus:
-- Fix "strict mode violation" by making locators unique (role+name, nth(), parent chaining).
-- Fix timeouts by waiting for navigation, network idle, or element visible/enabled.
-- If navigation happens, use: await Promise.all([ page.waitForNavigation(), action() ]);
-- If UI triggers XHR/fetch updates, wait on expect(locator).toHaveText/Count/Value instead of waitForTimeout.
-- Keep the same test name unless the flow truly changed.
-Return ONLY the corrected .spec.ts code.
+const REPAIR_INSTRUCTIONS = `You are an assistant that generates Playwright automation test scripts in TypeScript.
+Always follow these rules when writing scripts:
+Rules:
+- ignore case sensitivity while comparing text
+- All browser interactions must be executed using the Playwright MCP server tools.
+- Do not generate raw Playwright code or JavaScript — always call the Playwright MCP tool.
+1. Locator Handling:
+   - If multiple elements match a locator for 'add to cart', do not fail immediately.
+   - Iterate through the matched elements.
+   - For each element, check:
+       a. If it is visible ('await locator.isVisible()').
+       b. If the action is a click:
+           - Prefer elements that are 'role="button"', '<input>','<button>', '<a>', or clickable.
+       c. If the action is input (like 'fill' 'or 'type'):
+           - Prefer '<input>', '<textarea>', or editable fields.
+
+2. Error Resilience:
+   - Always wait for visibility before interacting.
+   - Use 'await expect(locator).toBeVisible()' before actions.
+   - If no suitable element is found, log a warning instead of throwing.
+
+3. Code Style:
+   - Always use async/await.
+   - Use 'page.getByRole', 'page.getByText', or 'page.locator' with filters.
+   - Keep the code clean and modular.
+   - Generate only TypeScript Playwright code, no extra explanation.
+
+Your output must be directly executable as a Playwright test.
 `;
 
 // ----------------- LLM SETUP -----------------
@@ -77,7 +111,7 @@ app.post('/api/generate', async (req, res) => {
     const { tools } = await getMcpTools();
 
     const response = await generateText({
-      model: openai("gpt-4.1"),
+      model: openai("gpt-4o-mini"),
       system: BASE_SYSTEM_RULES,
       prompt,
       tools,
@@ -103,21 +137,21 @@ app.post('/api/generate', async (req, res) => {
 // ----------------- RUN TEST API -----------------
 app.post("/api/run", async (req, res) => {
   try {
-    const { selectedFile, grep } = req.body;
-    if (!selectedFile) {
+    const { selected } = req.body;
+    if (!selected) {
       return res.status(400).json({ ok: false, error: 'Missing specFile' });
     }
-    const result = await runPlaywright(selectedFile, grep);
+    const result = await runPlaywright(selected);
     res.json({ ok: true, report: result });
   } catch (err) {
     res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });
   }
 });
 
-async function runPlaywright(specFile?: string, grep?: string) {
+async function runPlaywright(specFile?: string) {
   return new Promise((resolve) => {
     const reportDir = path.resolve(process.cwd(), "playwright-report");
-    const cmd = `npx playwright test tests/${specFile} --reporter=allure-playwright --output=${reportDir} --workers=1 --headed ${grep ? `--grep "${grep}"` : ""}`;
+    const cmd = `npx playwright test tests/${specFile} --reporter=allure-playwright --output=${reportDir} --workers=1 --headed`;
     exec(cmd, { env: { ...process.env, FORCE_COLOR: "0" }, timeout:60000 }, (err, stdout, stderr) => {
       if (err) {
         return resolve({ ok: false, stdout, stderr, reportPath: reportDir, error: err.message });

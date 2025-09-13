@@ -10,10 +10,7 @@ export default function App() {
 
   const reportUrl = "http://localhost:4000/report/index.html";
 
-  const [grep, setGrep] = useState("login");
-  const [selectedFile, setSelectedFile] = useState("");
   const [selected, setSelected] = useState("");
-  const [baseURL, setBaseURL] = useState("https://www.saucedemo.com/");
   const [log, setLog] = useState("");
 
   async function call(path: string, body?: any) {
@@ -40,10 +37,12 @@ export default function App() {
      setLoading(true); // show spinner
     console.log(loading);
     const j = await call("/api/self-heal", { prompt});//, filename, baseURL });
+    console.log("generated file,", j);
     // setLog((prev) => prev + "\nGenerated: " + JSON.stringify(j, null, 2));
-   setOptions((prevOptions) =>
-      prevOptions.includes(j.result.filename) ? prevOptions : [...prevOptions, j.result.filename]
-    );
+    if(j?.result?.filename)
+      setOptions((prevOptions) =>
+          prevOptions.includes(j.result?.filename) ? prevOptions : [...prevOptions, j.result?.filename]
+        );
     setTimeout(() => {
       console.log(loading);
       setLog((prev) => prev + "\nRun: " + JSON.stringify(j, null, 2));
@@ -53,8 +52,7 @@ export default function App() {
 
   async function onRun() {
     setLoading(true); // show spinner
-    console.log("selected file,", selectedFile);
-    const j = await call("/api/run", { selectedFile, grep, baseURL });
+    const j = await call("/api/run", { selected});
     // setLog((prev) => prev + "\nRun: " + JSON.stringify(j, null, 2));
     
     setTimeout(() => {
@@ -117,7 +115,7 @@ export default function App() {
       <p className="text-sm text-gray-600">
         Selected:{" "}
         <span className="font-semibold text-indigo-600">
-          {selectedFile || "None"}
+          {selected || "None"}
         </span>
       </p>
     </div>
